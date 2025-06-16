@@ -8,20 +8,20 @@
  *   - Return the char** so that *(*(maze + r) + c) is valid.
  */
 char ** allocateMaze(int rows, int cols) {
-    int i;
+    int r;
     char **maze = (char **)malloc(rows * sizeof(char *));
     if (!maze) {
         fprintf(stderr, "Failed to allocate row pointers.\n");
         return NULL;
     }
 
-    for (i = 0; i < rows; i++) {
-        maze[i] = (char *)malloc(cols * sizeof(char));
-        if (!maze[i]) {
-            fprintf(stderr, "Failed to allocate row %d.\n", i);
-            while (i-- > 0) {
-                free(maze[i]);
-            }
+    for (r = 0; r < rows; ++r) {
+        /* *(maze + r) is the same as maze[r], but uses pointer arithmetic */
+        *(maze + r) = malloc(cols * sizeof(char));
+        if (!*(maze + r)) {
+            perror("malloc");
+            /* free any rows we already got */
+            while (r-- > 0) free(*(maze + r));
             free(maze);
             return NULL;
         }
@@ -64,10 +64,10 @@ void printMaze(char **maze, int rows, int cols) {
  *   - Free each row, then free the array of row pointers.
  */
 void freeMaze(char **maze, int rows) {
-    int i;
+    int r;
     if (!maze) return;
-    for (i = 0; i < rows; i++) {
-        free(maze[i]);
+    for (r = 0; r < rows; ++r) {
+        free(*(maze + r));
     }
     free(maze);
 }

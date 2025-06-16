@@ -24,6 +24,11 @@ static void carvePathUntilExit(char **maze, int rows, int cols, int startCol) {
         curCol = startCol;
     }
 
+    /* always carve exactly one cell into the interior */
+    *(*(maze + 1) + startCol) = '.';
+    curRow = 1;
+    curCol = startCol;
+
     /* Walk until we reach the bottom row (rows-1) */
     while (curRow < rows - 1) {
         dir = rand() % 4; /* 0=up,1=down,2=left,3=right */
@@ -41,8 +46,10 @@ static void carvePathUntilExit(char **maze, int rows, int cols, int startCol) {
         }
 
         /* Check bounds; ignore moves that would leave the grid */
-        if (newRow < 0 || newRow >= rows || newCol < 0 || newCol >= cols) {
-            continue;
+
+        /* Only carve inside the inner (rows−2×cols−2) area */
+        if (newRow < 1 || newRow > rows - 2|| newCol < 1 || newCol > cols - 2) {
+             continue;
         }
 
         /* Carve if we're on a wall */
@@ -53,10 +60,16 @@ static void carvePathUntilExit(char **maze, int rows, int cols, int startCol) {
         /* Move the “walker” */
         curRow = newRow;
         curCol = newCol;
+
+        /* Optionally stop early if you’ve hit the last interior row */
+        if (curRow == rows - 2)
+            break;
+
     }
 
     /* Now curRow == rows-1; place 'E' there (overwriting the '.') */
-    *(*(maze + curRow) + curCol) = 'E';
+    /* Place the exit just below at the bottom border—which is the only carve allowed there */
+    *(*(maze + (rows - 1)) + curCol) = 'E';
 }
 
 /*
