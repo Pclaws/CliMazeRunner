@@ -7,9 +7,14 @@
 #include "mazegen.h"
 #include "mazeplay.h"
 
-#define MAX_NAME_LEN 100
-#define MAX_BEST_SCORES 3
+#define MAX_NAME_LEN 100      /** Maximum length for player name */
+#define MAX_BEST_SCORES 3     /** Track top 3 scores */
 
+/** 
+ * updateBestScores:
+ *   - Maintains the top 3 lowest move counts (best scores).
+ *   - Inserts newScore into the correct position if it qualifies.
+ */
 void updateBestScores(int *bestScores, int newScore) {
     int i, j;
     for (i = 0; i < MAX_BEST_SCORES; i++) {
@@ -24,23 +29,26 @@ void updateBestScores(int *bestScores, int newScore) {
 }
 
 int main(void) {
-    int rows, cols;
-    char **maze = NULL;
-    char again;
-    int bestScores[MAX_BEST_SCORES] = {0};
-    int i;
-    int winMoves;
+    int rows, cols;                  /** Maze dimensions */
+    char **maze = NULL;             /** Maze represented as char** */
+    char again;                     /** Replay input */
+    int bestScores[MAX_BEST_SCORES] = {0};  /** Array to hold top 3 scores */
+    int i;                          /** Loop counter */
+    int winMoves;                   /** Moves taken in current game */
 
-    char *playerName = NULL;
-    char nameInput[MAX_NAME_LEN];
+    char *playerName = NULL;        /** Dynamically allocated player name */
+    char nameInput[MAX_NAME_LEN];   /** Temporary buffer for input */
 
-    srand((unsigned)time(NULL));
+    srand((unsigned)time(NULL));    /** Seed random number generator */
 
     printf("Welcome to Maze Runner!\n\n");
+
+    /** Prompt for player's name */
     printf("Enter your name: ");
     fgets(nameInput, MAX_NAME_LEN, stdin);
-    nameInput[strcspn(nameInput, "\n")] = '\0';
+    nameInput[strcspn(nameInput, "\n")] = '\0';  /** Remove newline */
 
+    /** Allocate memory just enough for player name */
     playerName = malloc(strlen(nameInput) + 1);
     if (!playerName) {
         fprintf(stderr, "Memory allocation for name failed.\n");
@@ -48,9 +56,10 @@ int main(void) {
     }
     strcpy(playerName, nameInput);
 
+    /** Game loop: repeat until player chooses not to play */
     do {
-        rows = 10 + (rand() % 11);
-        cols = 10 + (rand() % 11);
+        rows = 10 + (rand() % 11);  /** Random height between 10–20 */
+        cols = 10 + (rand() % 11);  /** Random width between 10–20 */
 
         maze = allocateMaze(rows, cols);
         if (!maze) {
@@ -59,19 +68,21 @@ int main(void) {
             return EXIT_FAILURE;
         }
 
-        generateMaze(maze, rows, cols);
+        generateMaze(maze, rows, cols); /** Create new maze with guaranteed path */
 
-        winMoves = playMaze(maze, rows, cols);
+        winMoves = playMaze(maze, rows, cols); /** Play and get move count if win */
+
         if (winMoves > 0) {
             printf("Well done, %s!\n", playerName);
-            updateBestScores(bestScores, winMoves);
+            updateBestScores(bestScores, winMoves); /** Update top scores */
         } else {
             printf("Sorry you did not make it out.\n");
         }
 
-        freeMaze(maze, rows);
+        freeMaze(maze, rows);  /** Free memory used by maze */
         maze = NULL;
 
+        /** Ask if player wants to play again */
         printf("Would you like to play again? (Y/N): ");
         do {
             again = getchar();
@@ -82,6 +93,7 @@ int main(void) {
 
     } while (again == 'Y');
 
+    /** Display final top scores */
     printf("Thanks for playing, %s!\n", playerName);
     printf("Your Top %d Scores:\n", MAX_BEST_SCORES);
     for (i = 0; i < MAX_BEST_SCORES; i++) {
@@ -90,7 +102,7 @@ int main(void) {
         }
     }
 
-    free(playerName);
+    free(playerName);  /** Free memory used by name */
     printf("...Exiting game by Letshu Phinees Abel\n");
     return EXIT_SUCCESS;
 }
