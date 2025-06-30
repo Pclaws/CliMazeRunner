@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 #include "mazeplay.h"
 #include "utility.h"
 
@@ -22,42 +23,49 @@ static int findPlayer(char **maze, int rows, int cols, int *r, int *c) {
     return 0;
 }
 
-/*
+/**
  * playMaze:
- *   - Handle the user’s W/A/S/D/Q input until either 'E' is reached or Q is pressed.
- *   - Return 1 if the user won, 0 if they quit.
+ *   - Lets the player move through the maze using W/A/S/D keys.
+ *   - Tracks the number of valid steps (not counting walls).
+ *   - Returns number of moves if the player reaches the exit ('E').
+ *   - Returns 0 if the player quits by pressing 'Q'.
  */
 int playMaze(char **maze, int rows, int cols) {
-    int pr, pc;           /* player row, col */
-    int dr = 0, dc = 0;   /* delta row/col for the move */
-    int moves = 0;
-    char input;
+    int pr, pc;           /** player's current row and column */
+    int dr = 0, dc = 0;   /** change in row/col based on movement */
+    int moves = 0;        /** counts successful moves */
+    char input;           /** stores the user's input */
 
-    /* Locate initial 'S' */
+    /** Find the starting position 'S' in the maze */
     if (!findPlayer(maze, rows, cols, &pr, &pc)) {
-        return 0; /* no player found—shouldn't happen */
+        return 0; /** Should never happen, but return 0 just in case */
     }
 
     while (1) {
-        /* 1) Print the current maze */
+        /** Show the current maze */
         printMaze(maze, rows, cols);
         printf("\nMove (W/A/S/D) or Q to quit: ");
 
-        /* 2) Read one non‐newline char from stdin */
+        /** Read user input (ignore newlines) */
         do {
             input = getchar();
         } while (input == '\n');
-        /* Discard remaining until end of line */
+
+        /** Flush the rest of the line */
         while (getchar() != '\n');
 
+        /** Convert input to uppercase to handle both lowercase and uppercase */
         input = toupper((unsigned char)input);
 
+        /** Check for quit command */
         if (input == 'Q') {
-            return 0; /* quit early */
+            return 0; /** Player quit early */
         }
 
-        /* 3) Determine dr,dc based on input */
+        /** Reset movement deltas */
         dr = dc = 0;
+
+        /** Determine direction based on input */
         if (input == 'W') {
             dr = -1;
         } else if (input == 'S') {
@@ -67,51 +75,45 @@ int playMaze(char **maze, int rows, int cols) {
         } else if (input == 'D') {
             dc = 1;
         } else {
-            /* Invalid key: ignore and re‐loop */
-            continue;
+            continue; /** Ignore invalid keys */
         }
 
-        /* 4) Compute target cell */
+        /** Calculate target cell based on move */
         {
             int tr = pr + dr;
             int tc = pc + dc;
 
-            /* Check bounds */
+            /** Check if the target is outside the maze */
             if (tr < 0 || tr >= rows || tc < 0 || tc >= cols) {
-                /* Outside maze—treat as wall */
                 printf("\nYou walked into a wall!\n\n");
                 continue;
             }
 
             char target = *(*(maze + tr) + tc);
 
+            /** If it's a wall, don't move */
             if (target == '#') {
-                /* Hit a wall */
                 printf("\nYou walked into a wall!\n\n");
                 continue;
             }
-            /* Otherwise, target is either '.', '*' (visited), or 'E'. */
 
-            /* 5) Valid move: increment moves */
+            /** It's a valid move: count it */
             moves++;
 
-            /* 6) Check if stepping into 'E' */
+            /** Check if the player reached the exit */
             if (target == 'E') {
-                /* Mark previous position as '*' */
-                *(*(maze + pr) + pc) = '*';
-                /* Move player onto E (we'll overwrite E with S for display) */
-                *(*(maze + tr) + tc) = 'S';
+                *(*(maze + pr) + pc) = '*';       /** Mark previous spot */
+                *(*(maze + tr) + tc) = 'S';       /** Move player */
                 printMaze(maze, rows, cols);
                 printf("\nCongratulations! You reached the exit in %d moves.\n\n", moves);
-                return 1;
+                return moves; /** return number of moves as score */
             }
 
-            /* 7) Regular corridor ('.' or '*'): mark previous as '*' */
-            *(*(maze + pr) + pc) = '*';
-            /* Move player (place 'S' at new position) */
-            *(*(maze + tr) + tc) = 'S';
-            pr = tr;
-            pc = tc;
+            /** Regular move (onto '.' or '*'): update position */
+            *(*(maze + pr) + pc) = '*';   /** mark old position */
+            *(*(maze + tr) + tc) = 'S';   /** place 'S' at new position */
+            pr = tr;  /** update current row */
+            pc = tc;  /** update current column */
             printf("\n");
         }
     }
